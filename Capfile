@@ -164,5 +164,47 @@ before "get_xpn", "EC2:start"
 
 ### Process the PET data ###
 
+desc "install liftOver"
+task :install_liftover, :roles => group_name do
+  run "curl http://hgdownload.cse.ucsc.edu/admin/exe/linux.i386/liftOver > #{working_dir}/liftOver"
+  run "sudo mv #{working_dir}/liftOver /usr/bin/liftOver"
+  run "sudo chmod +x /usr/bin/liftOver"
+  run "mkdir -p #{working_dir}/lib"
+  run "curl http://hgdownload.cse.ucsc.edu/goldenPath/mm8/liftOver/mm8ToMm9.over.chain.gz > #{working_dir}/lib/mm8ToMm9.over.chain.gz"
+  run "cd #{working_dir}/lib && gunzip mm8ToMm9.over.chain.gz"
+  
+end
+before "install_liftover", "EC2:start"
 
 
+
+desc "Parse the PET data to csv"
+task :parse_pet, :roles => group_name do
+  run "mkdir -p #{working_dir}/scripts"
+  run "mkdir -p #{mount_point}/ESC/PET"
+  run "mkdir -p #{mount_point}/NS5/PET"
+  run "cd #{working_dir}/scripts && curl #{git_url}/scripts/convert_excel.pl > convert_excel.pl"
+  run "cd #{working_dir}/scripts && chmod +x convert_excel.pl"
+  run "sudo apt-get -y install  libspreadsheet-parseexcel-perl"
+  run "cd #{mount_point}/publication &&  #{working_dir}/scripts/convert_excel.pl DatasetS2 #{mount_point}/ESC/PET"
+  run "cd #{mount_point}/publication &&  #{working_dir}/scripts/convert_excel.pl DatasetS3 #{mount_point}/NS5/PET"
+end
+before 'parse_pet', 'EC2:start'
+
+
+# Merge the PET csv files from different RE1 site types and convert to IRanges
+desc "PET files to mm9 Iranges"
+task :pet2iranges, :roles => group_name do
+  run "cd #{mount_point}/ESC/PET &&  #{working_dir}/scripts/csv_to_iranges.R #{working_dir}/lib/mm8ToMm9.over.chain"
+  run "cd #{mount_point}/NS5/PET &&  #{working_dir}/scripts/csv_to_iranges.R #{working_dir}/lib/mm8ToMm9.over.chain"
+end 
+before 'pet2iranges', 'EC2:start'
+
+
+
+
+#now we have to deal with all the  nearest stuff?
+
+#and the tfbs stuff.
+
+#sigh.
