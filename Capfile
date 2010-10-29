@@ -68,17 +68,6 @@ end
 before 'publication_data','EC2:start'
 
 
-desc "Fetch expression data from Buckley Lab server"
-task :expression_data, :roles => group_name do  
-  run "mkdir -p #{mount_point}/publication"
-  upload("data/E14-REST_DN_QC_List-w-Replicates.csv", "#{mount_point}/publication/ESC-REST-DN-raw.csv")
-  upload("data/NS5-REST-DN-raw.csv", "#{mount_point}/publication/NS5-REST-DN-raw.csv")
-end
-before 'expression_data', 'EC2:start'
-
-
-
-
 desc "install R on all running instances in group group_name"
 task :install_r, :roles  => group_name do
   user = variables[:ssh_options][:user]
@@ -94,13 +83,82 @@ before "install_r", "EC2:start"
 
 ### Process the expression data ###
 
-desc "Run limma on the differential expression data"
-task :limma, :roles => group_name do
-  run "mkdir -p #{working_dir}/scripts"
-  
-end
-before 'limma', 'EC2:start'
+set :esc_xpn_file, "ESC-REST-DN-raw.csv"
+set :ns5_xpn_file, "NS5-REST-DN-raw.csv"
 
+
+desc "Fetch expression data from Buckley Lab server"
+task :expression_data, :roles => group_name do  
+  run "mkdir -p #{mount_point}/publication"
+  upload("data/E14-REST_DN_QC_List-w-Replicates.csv", "#{mount_point}/publication/#{esc_xpn_file}")
+  upload("data/NS5-REST-DN-raw.csv", "#{mount_point}/publication/#{ns5_xpn_file}")
+  #create results dirs
+  run "mkdir -p #{mount_point}/NS5/PET"
+  run "mkdir -p #{mount_point}/ESC/PET"
+  run "mkdir -p #{mount_point}/NS5/expression"
+  run "mkdir -p #{mount_point}/ESC/expression"
+
+end
+before 'expression_data', 'EC2:start'
+
+
+
+desc "run QC checks on the raw data"
+task :qc_expression_data, :roles => group_name do
+  puts "TODO"
+end
+before "qc_expression_data", "EC2:start"
+
+
+desc "run pre-processing on expression data"
+task :pp_expression_data, :roles => group_name do
+  run "mkdir -p #{working_dir}/scripts"
+  run "cd #{working_dir}/scripts && curl #{git_url}/scripts/limma_xpn.R > limma_xpn.R"
+  run "chmod +x #{working_dir}/scripts/limma_xpn.R"
+  run "cd #{mount_point}/NS5/expression && Rscript #{working_dir}/scripts/limma_xpn.R #{mount_point}/publication/#{ns5_xpn_file} limma_results.csv"
+  run "cd #{mount_point}/ESC/expression && Rscript #{working_dir}/scripts/limma_xpn.R #{mount_point}/publication/#{esc_xpn_file} limma_results.csv"
+end
+before "pp_expression_data", "EC2:start"
+
+
+desc "run QC checks on the pre-processed quality control"
+task "pp_qc_expression_data", :roles => group_name do
+  puts "TODO"
+end  
+before "pp_qc_exprssion_data", "EC2:start"
+
+
+desc "Fetch ReMoat data which has mm9 probe positions"
+task :get_remoat_anno, :roles => group_name do
+  run "mkdir -p #{working_dir}/lib"
+  run "rm -Rf  #{working_dir}/lib/Annotation_Illumina_Mouse*"
+  run "cd #{working_dir}/lib && curl http://www.compbio.group.cam.ac.uk/Resources/Annotation/final/Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip > Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip "
+  run "cd #{working_dir}/lib && unzip Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.zip"
+end 
+before 'get_remoat_anno', 'EC2:start'
+
+
+desc "Make an IRanges RangedData object from expression data"
+task :xpn2rd, :roles => group_name do
+  user = variables[:ssh_options][:user]
+  run "cd #{working_dir}/scripts && curl '#{git_url}/scripts/xpn_csv_to_iranges.R' >  xpn_csv_to_iranges.R"
+  run "cd #{working_dir}/scripts && chmod +x xpn_csv_to_iranges.R"
+  run "cd #{mount_point}/ESC/expression && Rscript #{working_dir}/scripts/xpn_csv_to_iranges.R limma_results.csv #{working_dir}/lib/Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.txt"
+  run "cd #{mount_point}/NS5/expression && Rscript #{working_dir}/scripts/xpn_csv_to_iranges.R limma_results.csv #{working_dir}/lib/Annotation_Illumina_Mouse-WG-V1_mm9_V1.0.0_Aug09.txt"
+
+end
+before "xpn2rd","EC2:start"  
+
+
+desc "Fetch expression data results"
+task :get_xpn, :roles=> group_name do
+  `mkdir -p results/NS5/expression`
+  `mkdir -p results/ESC/expression`
+  download("#{mount_point}/ESC/expression/limma_rd.csv", "results/ESC/expression/limma_rd.csv")
+  download("#{mount_point}/NS5/expression/limma_rd.csv", "results/NS5/expression/limma_rd.csv")
+
+end 
+before "get_xpn", "EC2:start"
 
 
 

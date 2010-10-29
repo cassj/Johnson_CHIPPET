@@ -18,7 +18,7 @@ data <- read.csv(filename)
 # be any way of getting hold of the original data.
 
 #grab expression value cols
-cols <- qw(dn, dn, dn, dn, ev, ev, ev, ev)
+cols <- qw(ev, ev, ev, dn, dn, dn)
 rownames(data)<-data[,1]
 n<-length(cols)
 data<-data[,2:(n+1)]
