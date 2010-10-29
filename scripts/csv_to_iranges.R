@@ -218,4 +218,5 @@ rd <- RangedData(ranges = IRanges(
                  )
 #And save the result
 save(rd, file="RangedData.R")
-
+df <- as.data.frame(rd)
+write.csv(df, file="RangedData.csv", row.names=F)

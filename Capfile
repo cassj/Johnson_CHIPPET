@@ -195,12 +195,21 @@ before 'parse_pet', 'EC2:start'
 # Merge the PET csv files from different RE1 site types and convert to IRanges
 desc "PET files to mm9 Iranges"
 task :pet2iranges, :roles => group_name do
+  run "mkdir -p #{working_dir}/scripts"
+  run "cd #{working_dir}/scripts && curl #{git_url}/scripts/csv_to_iranges.R > csv_to_iranges.R"
+  run "sudo chmod +x #{working_dir}/scripts/csv_to_iranges.R"
   run "cd #{mount_point}/ESC/PET &&  #{working_dir}/scripts/csv_to_iranges.R #{working_dir}/lib/mm8ToMm9.over.chain"
   run "cd #{mount_point}/NS5/PET &&  #{working_dir}/scripts/csv_to_iranges.R #{working_dir}/lib/mm8ToMm9.over.chain"
 end 
 before 'pet2iranges', 'EC2:start'
 
 
+
+desc "get the PET data"
+task "fetch_pet", :roles => group_name do
+
+end 
+before 'fetch_pet', 'EC2:start'
 
 
 #now we have to deal with all the  nearest stuff?
