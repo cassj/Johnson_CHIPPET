@@ -207,7 +207,12 @@ before 'pet2iranges', 'EC2:start'
 
 desc "get the PET data"
 task "fetch_pet", :roles => group_name do
-
+  `mkdir -p results/ESC/PET`
+  `mkdir -p results/NS5/PET`
+  download("#{mount_point}/ESC/PET/RangedData.R", "results/ESC/PET/RangedData.R")
+  download("#{mount_point}/ESC/PET/RangedData.csv", "results/ESC/PET/RangedData.csv")
+  download("#{mount_point}/NS5/PET/RangedData.R", "results/NS5/PET/RangedData.R")
+  download("#{mount_point}/NS5/PET/RangedData.csv", "results/NS5/PET/RangedData.csv")
 end 
 before 'fetch_pet', 'EC2:start'
 
