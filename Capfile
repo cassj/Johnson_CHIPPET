@@ -29,6 +29,13 @@ set :mount_point, '/mnt/data'
 
 set :git_url, 'http://github.com/cassj/Johnson_CHIPPET/raw/master'
 
+# Try and load a local config file to override any of the above values, should one exist.
+# So that if you change these values, they don't get overwritten if you update the repos.
+begin
+ load("Capfile.local")
+rescue Exception
+end
+
 #cap EC2:start
 #cap EBS:create (unless you want to use the one that already exists)
 #cap EBS:attach
