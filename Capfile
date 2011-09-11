@@ -13,8 +13,9 @@ set :ssh_options, {
   :keys => [ENV['EC2_KEYFILE']],
   :user => "ubuntu"
 }
-set :ami, 'ami-52794c26' #32-bit ubuntu lucid server (eu-west-1)
-set :instance_type, 'm1.small'
+set :ami, `curl http://mng.iop.kcl.ac.uk/cass_data/buckley_ami/AMIID`.chomp
+
+set :instance_type, 'm1.large'
 set :working_dir, '/mnt/work'
 
 set :group_name, 'Johnson_ChIPPET'
@@ -24,10 +25,11 @@ set :snap_id, `cat SNAPID`.chomp #empty until you've created a snapshot
 set :vol_id, `cat VOLUMEID`.chomp #empty until you've created a new volume
 set :ebs_size, 3  
 set :availability_zone, 'eu-west-1a'  #wherever your ami is. 
-set :dev, '/dev/sdf'
+#set :dev, '/dev/sdf'
+set :dev, '/dev/xvdf'
 set :mount_point, '/mnt/data'
 
-set :git_url, 'http://github.com/cassj/Johnson_CHIPPET/raw/master'
+set :git_url, 'https://raw.github.com/cassj/Johnson_CHIPPET/master'
 
 # Try and load a local config file to override any of the above values, should one exist.
 # So that if you change these values, they don't get overwritten if you update the repos.
@@ -122,7 +124,7 @@ task :pp_expression_data, :roles => group_name do
   run "mkdir -p #{working_dir}/scripts"
   run "cd #{working_dir}/scripts && curl #{git_url}/scripts/limma_xpn.R > limma_xpn.R"
   run "chmod +x #{working_dir}/scripts/limma_xpn.R"
-  run "cd #{mount_point}/NS5/expression && Rscript #{working_dir}/scripts/limma_xpn.R #{mount_point}/publication/#{ns5_xpn_file} limma_results.csv"
+  run  "cd #{mount_point}/NS5/expression && Rscript #{working_dir}/scripts/limma_xpn.R #{mount_point}/publication/#{ns5_xpn_file} limma_results.csv"
   run "cd #{mount_point}/ESC/expression && Rscript #{working_dir}/scripts/limma_xpn.R #{mount_point}/publication/#{esc_xpn_file} limma_results.csv"
 end
 before "pp_expression_data", "EC2:start"
