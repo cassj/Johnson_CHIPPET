@@ -223,8 +223,44 @@ task "fetch_pet", :roles => group_name do
 end 
 before 'fetch_pet', 'EC2:start'
 
+desc "Annotate PET Data with nearest genes"
+task 'pet_nearest', :roles => group_name do
+  run "mkdir -p #{working_dir}/scripts"
+  upload("scripts/mm9RDtoGenes.R", "#{working_dir}/scripts/mm9RD2Genes.R")
+  run("chmod +x #{working_dir}/scripts/mm9RD2Genes.R")
+  run "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/ESC/PET/RangedData.R"
+  run "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/NS5/PET/RangedData.R"
+end
+before 'pet_nearest', 'EC2:start'
 
-#now we have to deal with all the  nearest stuff?
+
+
+desc "get annotated PET data"
+task "fetch_anno_pet", :roles => group_name do
+  `mkdir -p results/ESC/PET`
+  `mkdir -p results/NS5/PET`
+  download("#{mount_point}/ESC/PET/RangedData_nearest.csv", "results/ESC/PET/RangedData_nearest.csv")
+  download("#{mount_point}/NS5/PET/RangedData_nearest.csv", "results/NS5/PET/RangedData_nearest.csv")
+end 
+before 'fetch_anno_pet', 'EC2:start'
+
+
+desc "make a bed file of the PET RangedData"
+task "rd_to_bed", :roles => group_name do
+  run "mkdir -p #{working_dir}/scripts"
+  upload("scripts/rd2bed.R", "#{working_dir}/scripts/rd2bed.R")
+  run "#{working_dir}/scripts/rd2bed.R #{mount_point}/ESC/PET/RangedData.R"
+  run "#{working_dir}/scripts/rd2bed.R #{mount_point}/NS5/PET/RangedData.R"
+end
+before 'make_pet_bed', 'EC2:start'
+
+desc "get bed files"
+task "fetch_pet_bed", :roles => group_name do
+  download("#{mount_point}/ESC/PET/peaks.bed", "results/ESC/PET/peaks.bed")
+  download("#{mount_point}/NS5/PET/peaks.bed", "results/NS5/PET/peaks.bed")
+end 
+before 'fetch_pet_bed', 'EC2:start'
+
 
 #and the tfbs stuff.
 
