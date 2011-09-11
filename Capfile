@@ -175,7 +175,7 @@ before "get_xpn", "EC2:start"
 
 desc "install liftOver"
 task :install_liftover, :roles => group_name do
-  run "curl http://hgdownload.cse.ucsc.edu/admin/exe/linux.i386/liftOver > #{working_dir}/liftOver"
+  run "curl http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver > #{working_dir}/liftOver"
   run "sudo mv #{working_dir}/liftOver /usr/bin/liftOver"
   run "sudo chmod +x /usr/bin/liftOver"
   run "mkdir -p #{working_dir}/lib"
