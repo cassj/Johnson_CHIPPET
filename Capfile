@@ -230,8 +230,8 @@ task 'pet_nearest', :roles => group_name do
   run "mkdir -p #{working_dir}/scripts"
   upload("scripts/mm9RDtoGenes.R", "#{working_dir}/scripts/mm9RD2Genes.R")
   run("chmod +x #{working_dir}/scripts/mm9RD2Genes.R")
-  run "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/ESC/PET/RangedData.R"
-  run "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/NS5/PET/RangedData.R"
+  puts "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/ESC/PET/RangedData.R"
+  puts "#{working_dir}/scripts/mm9RD2Genes.R #{mount_point}/NS5/PET/RangedData.R"
 end
 before 'pet_nearest', 'EC2:start'
 
